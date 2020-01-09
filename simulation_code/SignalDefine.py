@@ -4,8 +4,8 @@ from typing import List
 import numpy as np
 import resampy
 from collections import namedtuple
-from dsp import rrcfilter
-from dsp import upsample
+from .dsp import rrcfilter
+from .dsp import upsample
 from scipy.signal import fftconvolve
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +58,7 @@ class QamSignal(Signal):
         16: '16qam.npy'
     }
 
-    def __init__(self, sps, sps_in_fiber, rrc_param, length, order, power, baudrate, seed=0, is_pol=1,center_frequency=193.1E12):
+    def __init__(self, sps, sps_in_fiber, rrc_param, length, order, power, baudrate, center_frequency,seed=0, is_pol=1):
         super(QamSignal, self).__init__(sps,sps_in_fiber,baudrate,center_frequency)
         self.rrc_param = rrc_param
         self.order = order
@@ -107,9 +107,6 @@ class QamSignal(Signal):
         res = res(power,power_dbm,total_linear_power,total_linear_power_dbm)
 
         return res
-
-
-
 
     def pulse_shaping(self, roll_off, span):
         rrc_filter_tap = rrcfilter(roll_off, span, self.sps)
