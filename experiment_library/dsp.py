@@ -4,7 +4,7 @@ from scipy.constants import c
 import copy
 import matplotlib.pyplot as plt
 
-from helpClass import Signal
+from .helpClass import Signal
 
 plt.ion()
 
