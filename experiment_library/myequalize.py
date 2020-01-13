@@ -29,11 +29,12 @@ def equalizer(signal, os, ntaps, mu, iter_number, method='cma', mode='training',
     wxy = np.zeros((1, ntaps), dtype=ex.dtype)
     wyx = np.zeros((1, ntaps), dtype=ex.dtype)
 
-    wxy[0, ntaps // 2] = 1
-    wyx[0, ntaps // 2] = 1
+    wxx[0, ntaps // 2] = 1
+    wyy[0, ntaps // 2] = 1
     error_xpol = []
     error_ypol = []
-
+   # iter_number = iter_number - 1
+   # training_time = training_time - 1
     if method == 'cma':
         for i in range(iter_number):
             wxx, wxy, wyx, wyy, error_x, error_y = cma_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu)
@@ -46,14 +47,14 @@ def equalizer(signal, os, ntaps, mu, iter_number, method='cma', mode='training',
 
             for i in range(iter_number):
                 if training_time:
-                    wxx, wxy, wyx, wyy, error_x, error_y = lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, True,
+                    symbols,  wxx, wxy, wyx, wyy, error_x, error_y = lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, True,
                                                                              train_symbol[0], train_symbol[1],
                                                                              np.unique(train_symbol.flatten()))
                     training_time -= 1
                     error_xpol.append(error_x)
                     error_ypol.append(error_y)
                 else:
-                    wxx, wxy, wyx, wyy, error_x, error_y = lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu,
+                    symbols, wxx, wxy, wyx, wyy, error_x, error_y = lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu,
                                                                              training_time, train_symbol[0],
                                                                              train_symbol[1],
                                                                              np.unique(train_symbol.flatten()))
@@ -62,30 +63,31 @@ def equalizer(signal, os, ntaps, mu, iter_number, method='cma', mode='training',
     else:
         raise NotImplementedError
 
-    xout = ex[:, ::-1].dot(wxx.T) + ey[:, ::-1].dot(wxy.T)
-    yout = ex[:, ::-1].dot(wyx.T) + ey[:, ::-1].dot(wyy.T)
 
-    xout.shape = 1, -1
-    yout.shape = 1, -1
-    symbol = np.vstack((xout, yout))
-    return symbol, (wxx, wxy, wyx, wyy, error_xpol, error_ypol)
+
+
+
+
+    return symbols, (wxx, wxy, wyx, wyy, error_xpol, error_ypol)
+
+
+
 
 @numba.njit(cache=True)
 def lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, is_train, train_symbol_xpol, train_symbol_ypol, constl):
 
-    # symbols = np.zeros((1,ex.shape[0]),dtype=np.complex128)
+    symbols = np.zeros((2,ex.shape[0]),dtype=np.complex128)
     error_xpol_array = np.zeros((1, ex.shape[0]), dtype=np.float64)
     error_ypol_array = np.zeros((1, ey.shape[0]), dtype=np.float64)
-
     for idx in range(len(ex)):
         xx = ex[idx][::-1]
         yy = ey[idx][::-1]
         xout = np.sum(wxx * xx) + np.sum(wxy * yy)
         yout = np.sum(wyx * xx) + np.sum(wyy * yy)
-
+        symbols[0, idx] = xout
+        symbols[1, idx] = yout
 
         if is_train == 1:
-
             error_xpol = train_symbol_xpol[idx] - xout
             error_ypol = train_symbol_ypol[idx] - yout
         else:
@@ -103,7 +105,7 @@ def lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, is_train, train_symbol_xpo
         wyx = wyx + mu * error_ypol * np.conj(xx)
         wyy = wyy + mu * error_ypol * np.conj(yy)
 
-    return wxx, wxy, wyx, wyy, error_xpol_array, error_ypol_array
+    return symbols,wxx, wxy, wyx, wyy, error_xpol_array, error_ypol_array
 
 
 @numba.njit(cma_core_type, cache=True)
