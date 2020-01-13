@@ -1,5 +1,8 @@
 from scipy.constants import c
 import numpy as np
+from collections import namedtuple
+
+from simulation_code.SignalDefine import Signal
 
 
 class Laser(object):
@@ -17,26 +20,24 @@ class Laser(object):
         self.is_phase_noise = is_phase_noise
         self.laser_power = laser_power
 
-    def prop(self, signal):
+    def prop(self, signal) -> Signal:
         signal[:] = signal[:] / np.sqrt(np.mean(np.abs(signal[:]) ** 2, axis=1, keepdims=True))
         laser_power = 10 ** (self.laser_power / 10)
         laser_power = laser_power / 1000
         signal[:] = np.sqrt(laser_power) * signal[:]
 
         if self.is_phase_noise:
-            sigma2 = 2 * np.pi * self.linewidth / signal.fs_in_fiber
 
-            initial_phase = np.pi * (2 * np.random.rand(1) - 1)
-            dtheta = np.zeros(signal.shape)
-            dtheta = np.atleast_2d(dtheta)
-            for row in dtheta:
-                row[1:] = np.sqrt(sigma2) * np.random.randn(1, len(row) - 1)
+            w = np.sqrt(2 * np.pi * 1/signal.fs_in_fiber * self.linewidth)* np.random.randn(signal.shape[0], signal.shape[1] - 1)
 
-            phase_noise = initial_phase + np.cumsum(dtheta, axis=1)
-            signal[:] = signal[:] * np.exp(1j * phase_noise)
-            return signal
+            phi = np.zeros(signal.shape)
+            phi[:,0] = -np.pi + 2 * np.pi * np.random.rand(1)
+            for k in range(w.shape[1]):
+                phi[:,k+1] = phi[:,k] + w[:,k]
+            signal[:] = signal[:] * np.exp(-1j*phi)
+        return signal
 
-from collections import namedtuple
+
 
 ConstantGainEdfaParam = namedtuple('param','expected_gain nf')
 ConstantPowerEdfaParam = namedtuple('param','expected_power nf')

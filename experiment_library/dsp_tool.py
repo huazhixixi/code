@@ -9,7 +9,7 @@ import numpy as np
 
 import numba
 
-from helpClass import Signal
+from .helpClass import Signal
 
 
 def __segment_axis(a, length, overlap, mode='cut', append_to_end=0):

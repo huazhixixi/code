@@ -5,14 +5,14 @@ Created on Thu Dec 19 18:33:31 2019
 .dotauthor: shang
 """
 
-from dsp_tool import __segment_axis
+from .dsp_tool import __segment_axis
 import numpy as np
 import numba
 
 from numba import complex128, double
 
-from dsp_tool import decision
-from phase import superscalar
+from .dsp_tool import decision
+from .phase import superscalar
 
 cma_core_type = (
     complex128[:, :], complex128[:, :], complex128[:, :], complex128[:, :], complex128[:, :], complex128[:, :], double)
@@ -70,40 +70,6 @@ def equalizer(signal, os, ntaps, mu, iter_number, method='cma', mode='training',
     symbol = np.vstack((xout, yout))
     return symbol, (wxx, wxy, wyx, wyy, error_xpol, error_ypol)
 
-
-@numba.njit(['float64[:](float64[:],float64[:])', 'complex128[:](complex128[:],complex128[:])'])
-def mycorrelate(x, y):
-    return np.convolve(x, y[::-1])
-
-@numba.njit(['float64[:](float64[:],float64[:])', 'complex128[:](complex128[:],complex128[:])'])
-def sync_signal(rx_samples,tx_symbol):
-    res = mycorrelate(tx_symbol, rx_samples)
-    index = np.argmax(np.abs(res))
-    return index
-    out[i] = np.roll(symbol_tx_temp, -index - 1 + sample_rx_temp.shape[0])
-
-@numba.jit
-def super_scalar_feedback(ex, ey, wxx, wxy, wyx, wyy,tx_symbols_xpol,tx_symbols_ypol):
-    xout = ex[:, ::-1].dot(wxx.T) + ey[:, ::-1].dot(wxy.T)
-    yout = ex[:, ::-1].dot(wyx.T) + ey[:, ::-1].dot(wyy.T)
-
-    xout.shape = 1, -1
-    yout.shape = 1, -1
-    xout = xout[0]
-    yout = yout[0]
-
-
-    index_xpol = sync_signal(xout,tx_symbols_xpol)
-    index_ypol = sync_signal(yout,tx_symbols_ypol)
-
-    tx_symbols_xpol = np.roll(tx_symbols_xpol, -index_xpol - 1 + xout.shape[0])
-    tx_symbols_ypol = np.roll(tx_symbols_ypol, -index_ypol - 1 + yout.shape[0])
-
-    *_,phase_ml_xpol = superscalar(xout,tx_symbols_xpol,200,8)
-    *_,phase_ml_ypol = superscalar(yout,tx_symbols_ypol,200,8)
-
-    return phase_ml_xpol,phase_ml_ypol
-
 @numba.njit(cache=True)
 def lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, is_train, train_symbol_xpol, train_symbol_ypol, constl):
 
@@ -117,11 +83,9 @@ def lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, is_train, train_symbol_xpo
         xout = np.sum(wxx * xx) + np.sum(wxy * yy)
         yout = np.sum(wyx * xx) + np.sum(wyy * yy)
 
-        phase_xpol,phase_ypol = super_scalar_feedback(ex, ey, wxx, wxy, wyx, wyy,train_symbol_xpol,train_symbol_ypol)
 
         if is_train == 1:
-            xout = xout * np.exp(-1*1j*phase_xpol[idx])
-            yout = yout * np.exp(-1j*phase_ypol[idx])
+
             error_xpol = train_symbol_xpol[idx] - xout
             error_ypol = train_symbol_ypol[idx] - yout
         else:
@@ -134,10 +98,10 @@ def lms_equalize_core(ex, ey, wxx, wyy, wxy, wyx, mu, is_train, train_symbol_xpo
 
         error_xpol_array[0, idx] = np.abs(error_xpol)
         error_ypol_array[0, idx] = np.abs(error_ypol)
-        wxx = wxx + mu * error_xpol * np.conj(xx * np.exp(-1j*phase_xpol[idx]) )
-        wxy = wxy + mu * error_xpol * np.conj(yy * np.exp(-1j*phase_ypol[idx]))
-        wyx = wyx + mu * error_ypol * np.conj(xx * np.exp(-1j*phase_xpol[idx]))
-        wyy = wyy + mu * error_ypol * np.conj(yy * np.exp(-1j*phase_ypol[idx]))
+        wxx = wxx + mu * error_xpol * np.conj(xx)
+        wxy = wxy + mu * error_xpol * np.conj(yy)
+        wyx = wyx + mu * error_ypol * np.conj(xx)
+        wyy = wyy + mu * error_ypol * np.conj(yy)
 
     return wxx, wxy, wyx, wyy, error_xpol_array, error_ypol_array
 

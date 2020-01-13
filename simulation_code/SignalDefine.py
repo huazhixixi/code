@@ -22,7 +22,8 @@ class Signal(object):
         self.ds_in_fiber = None
         self.ds_in_dsp = None
         self.center_frequency = center_frequency
-
+        self.ds_in_dsp = None
+        self.ds_in_fiber  = None
         self.msg = None
         self.symbol = None
     @property
@@ -65,7 +66,6 @@ class QamSignal(Signal):
         self.length = length
         self.seed = seed
         self.msg = None
-        self.symbol = None
         self.is_pol = is_pol
         self.power = power
         self.init()
@@ -90,6 +90,7 @@ class QamSignal(Signal):
 
         self.ds_in_fiber = resampy.resample(self.ds_in_dsp, self.sps, self.sps_in_fiber, axis=1)
         self.set_power()
+        return self
 
     def set_power(self):
         factor = np.mean(np.abs(self.ds_in_fiber) ** 2, axis=1, keepdims=True)

@@ -15,7 +15,7 @@ import numpy as np
 import numba
 from numba import  prange
 from scipy.signal import lfilter
-from dsp_numba_core import lms_numba_iter_core,decision
+from .dsp_numba_core import lms_numba_iter_core,decision
 def __segment_axis(a, length, overlap, mode='cut', append_to_end=0):
     """
         Generate a new array that chops the given array along the given axis into

@@ -6,6 +6,8 @@ Created on Mon Dec  2 14:54:11 2019
 """
 import resampy
 
+#from .SignalDefine import Signal
+
 """
 Created on Sat Nov 23 19:33:49 2019
 
@@ -15,7 +17,7 @@ import numpy as np
 import numba
 from numba import prange
 from scipy.signal import lfilter
-from dsp_numba_core import lms_numba_iter_core, decision
+from .dsp_numba_core import lms_numba_iter_core, decision
 
 
 def __segment_axis(a, length, overlap, mode='cut', append_to_end=0):

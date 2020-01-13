@@ -10,7 +10,7 @@ import numba
 from numba import prange
 from scipy.signal import lfilter
 
-from helpClass import Signal
+from .helpClass import Signal
 
 
 def find_freq_offset(sig, fs,average_over_modes = True, fft_size = 2**18):
@@ -144,16 +144,12 @@ def segment_find_freq(signal,fs,group,apply=True):
     else:
         return np.array([xpol,ypol]),freq_offset
         
-        
-import numba
-@numba.jit
+
 def superscalar(symbol_in, training_symbol, block_length, pilot_number, constl, g,filter_n=20):
     # delete symbols to assure the symbol can be divided into adjecent channels
     symbol_in = np.atleast_2d(symbol_in)
     training_symbol =np.atleast_2d(training_symbol)
     constl = np.atleast_2d(constl)
-    assert symbol_in.shape == training_symbol.shape
-
     assert symbol_in.shape[0]==1
     assert training_symbol.shape[0]==1
     assert constl.shape[0]==1
@@ -265,6 +261,16 @@ def __initialzie_superscalar(symbol_in, training_symbol, block_length):
 
     return divided_symbols, divided_training_symbols
 
+@numba.guvectorize([(numba.types.complex128[:],numba.types.complex128[:],numba.types.complex128[:])], '(n),(m)->(n)',nopython=True)
+def exp_decision(symbol,const,res):
+    for index,sym in enumerate(symbol):
+        # distance = sym-const
+        distance = np.abs(sym-const)
+        res[index] = const[np.argmin(distance)]
+
+
+
+
 @numba.jit(cache=True)
 def decision(symbol, constl):
     '''
@@ -277,9 +283,4 @@ def decision(symbol, constl):
     return decision
 
 
-@numba.guvectorize([(numba.types.complex128[:],numba.types.complex128[:],numba.types.complex128[:])], '(n),(m)->(n)',nopython=True)
-def exp_decision(symbol,const,res):
-    for index,sym in enumerate(symbol):
-        # distance = sym-const
-        distance = np.abs(sym-const)
-        res[index] = const[np.argmin(distance)]
+

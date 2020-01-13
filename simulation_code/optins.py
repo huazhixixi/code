@@ -6,8 +6,8 @@ from numpy.fft import fftfreq
 from scipy.constants import h, c
 from scipy.fftpack import ifft, fft, next_fast_len
 from scipy.special import erf
-from SignalDefine import Signal
-from SignalDefine import  WdmSignal
+from .SignalDefine import Signal
+from .SignalDefine import  WdmSignal
 import numpy as np
 
 
