@@ -105,8 +105,8 @@ def comp_freq_offset(sig, freq_offset, os=1 ):
     
     
 def segment_find_freq(signal,fs,group,apply=True):
-    from dsp_tool import __segment_axis
-    from dsp_tool import get_time_vector
+    from .dsp_tool import __segment_axis
+    from .dsp_tool import get_time_vector
     
     length = signal.shape[1]//group
     freq_offset = []

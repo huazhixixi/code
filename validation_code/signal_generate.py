@@ -21,6 +21,13 @@ signal = matched_filter(signal)
 
 signal[:] = signal[:]/np.sqrt(np.mean(np.abs(signal[:])**2,axis=1,keepdims=True))
 from experiment_library.phase import superscalar
-sysmbols,train_symbol,_ = superscalar(signal[0,::2],signal.symbol[0],200,8,np.unique(signal.symbol[0]),0.02)
+from experiment_library.myequalize import equalizer
+from scipy.io import loadmat
+signal[:] = loadmat('rx.mat')['rx_samples']
+signal.symbol = loadmat('rx.mat')['tx_symbols']
+symbol, (wxx, wxy, wyx, wyy, error_xpol, error_ypol) = equalizer(signal[:],2,31,0.001,3,'lms',training_time=3,train_symbol=signal.symbol)
 import matplotlib.pyplot as plt
-plt.scatter(sysmbols[0].real,sysmbols[0].imag)
+plt.scatter(symbol[0].real,symbol[0].imag)
+# sysmbols,train_symbol,_ = superscalar(signal[0,::2],signal.symbol[0],200,8,np.unique(signal.symbol[0]),0.02)
+# import matplotlib.pyplot as plt
+# plt.scatter(sysmbols[0].real,sysmbols[0].imag)
