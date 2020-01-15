@@ -1,7 +1,7 @@
 import pandas as pd
-import tqdm
-import os
 import numpy as np
+import os
+
 def read_data(BASE_DIR,saveto):
     for file_name in os.listdir(BASE_DIR):
         if 'Ch1' in file_name:
@@ -39,7 +39,8 @@ def read_data(BASE_DIR,saveto):
     # savemat(saveto,dict(samples = np.vstack((xpol,ypol))))
     np.savez(saveto,np.vstack((xpol,ypol)))
 
+
 if __name__ == '__main__':
-    import tqdm
-    for i in tqdm.tqdm(range(20),ascii=True):
-        read_data(f'./5dbm/{i+1}',f'{i}.npz')
+    for ith,dir in enumerate(os.listdir('/Volumes/D/ai/5dbm')):
+        if not dir.startswith('.'):
+            read_data('/Volumes/D/ai/5dbm/'+dir,f'./npzdata/5dbm_{ith}.npz')
